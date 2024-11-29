@@ -54,3 +54,11 @@ variable "aks_version" {
 variable "aks_vm_size" {
   description = "The AKS VM Size."
 }
+
+variable "aks_sku_tier" {
+  description = "The AKS SKU Tier."
+}
+
+variable "aks_support_plan" {
+  description = "The AKS Support Plan."
+}

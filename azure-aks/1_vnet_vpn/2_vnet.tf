@@ -19,20 +19,28 @@ resource "azurerm_virtual_network" "vnet" {
 
 # Public Subnet
 resource "azurerm_subnet" "public_subnet" {
-  count                = length(var.public_subnets)
-  name                 = "${var.prefix}-public-subnet-${count.index}"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [var.public_subnets[count.index]]
+  count                                         = length(var.public_subnets)
+  name                                          = "${var.prefix}-public-subnet-${count.index}"
+  resource_group_name                           = var.rg_name
+  virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = [var.public_subnets[count.index]]
+  default_outbound_access_enabled               = true
+  private_endpoint_network_policies             = "Enabled"
+  private_link_service_network_policies_enabled = false
 }
 
 # Private Subnet
 resource "azurerm_subnet" "private_subnet" {
-  count                = length(var.private_subnets)
-  name                 = "${var.prefix}-private-subnet-${count.index}"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [var.private_subnets[count.index]]
+  count                                         = length(var.private_subnets)
+  name                                          = "${var.prefix}-private-subnet-${count.index}"
+  resource_group_name                           = var.rg_name
+  virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = [var.private_subnets[count.index]]
+  default_outbound_access_enabled               = true
+  private_endpoint_network_policies             = "Enabled"
+  private_link_service_network_policies_enabled = false
+
+  service_endpoints = ["Microsoft.KeyVault", "Microsoft.ContainerRegistry", "Microsoft.Storage"]
 }
 
 # Public Network Security Group

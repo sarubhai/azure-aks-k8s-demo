@@ -52,11 +52,6 @@ output "cluster_id" {
   description = "AKS cluster Id."
 }
 
-output "cluster_endpoint" {
-  value       = module.aks.cluster_endpoint
-  description = "Endpoint for AKS control plane."
-}
-
 output "cluster_private_endpoint" {
   value       = module.aks.cluster_private_endpoint
   description = "Endpoint for AKS control plane."

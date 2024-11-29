@@ -43,4 +43,6 @@ module "aks" {
   public_subnet_id  = module.vnet_vpn.public_subnet_id
   aks_version       = var.aks_version
   aks_vm_size       = var.aks_vm_size
+  aks_sku_tier      = var.aks_sku_tier
+  aks_support_plan  = var.aks_support_plan
 }

@@ -34,12 +34,12 @@ variable "vnet_cidr_block" {
 # Subnet CIDR
 variable "private_subnets" {
   description = "A list of CIDR blocks to use for the private subnet."
-  default     = ["10.30.1.0/24", "10.30.2.0/24", "10.30.3.0/24"]
+  default     = ["10.30.0.0/24", "10.30.1.0/24", "10.30.2.0/24"]
 }
 
 variable "public_subnets" {
   description = "A list of CIDR blocks to use for the public subnet."
-  default     = ["10.30.4.0/24", "10.30.5.0/24", "10.30.6.0/24"]
+  default     = ["10.30.3.0/24", "10.30.4.0/24", "10.30.5.0/24"]
 }
 
 # OpenVPN Access Server
@@ -75,10 +75,20 @@ variable "vpn_admin_password" {
 # AKS
 variable "aks_version" {
   description = "The AKS Version."
-  default     = "1.30"
+  default     = "1.30.0"
 }
 
 variable "aks_vm_size" {
   description = "The AKS VM Size."
-  default     = "Standard_D2_v2"
+  default     = "Standard_D2_v2" # "Standard_DS2_v2"
+}
+
+variable "aks_sku_tier" {
+  description = "The AKS SKU Tier."
+  default     = "Free" # Standard, Premium
+}
+
+variable "aks_support_plan" {
+  description = "The AKS Support Plan."
+  default     = "KubernetesOfficial" # AKSLongTermSupport
 }
