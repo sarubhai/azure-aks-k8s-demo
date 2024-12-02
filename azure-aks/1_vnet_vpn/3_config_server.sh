@@ -10,11 +10,13 @@ apt-get install -y wget curl net-tools gnupg
 
 bash <(curl -fsS https://packages.openvpn.net/as/install.sh) --yes
 
+systemctl restart openvpnas
+
 while ! systemctl is-active --quiet openvpnas; do
-    sleep 2
+    sleep 10
 done
 
-pushd /usr/local/openvpn_as/scripts
+cd /usr/local/openvpn_as/scripts
 ./sacli --user ${VPN_ADMIN_USER} --key "prop_superuser" --value "true" UserPropPut
 ./sacli --user ${VPN_ADMIN_USER} --key "user_auth_type" --value "local" UserPropPut
 ./sacli --user ${VPN_ADMIN_USER} --new_pass=${VPN_ADMIN_PASSWORD} SetLocalPassword
@@ -30,6 +32,5 @@ pushd /usr/local/openvpn_as/scripts
 ./sacli --key "vpn.server.dhcp_option.dns.0" --value "${VNET_NAME_SERVER}" ConfigPut
 ./sacli --key "vpn.server.dhcp_option.dns.1" --value "8.8.8.8" ConfigPut
 ./sacli start
-popd
 
-# ./sacli ConfigQuery
+./sacli ConfigQuery

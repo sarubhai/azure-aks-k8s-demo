@@ -57,12 +57,12 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     name                         = "system"
     type                         = "VirtualMachineScaleSets"
     vm_size                      = var.aks_vm_size
-    vnet_subnet_id               = var.private_subnet_id[0]
+    vnet_subnet_id               = var.private_subnet_id[1]
     zones                        = [1, 2, 3]
-    node_count                   = 2
+    node_count                   = 3
     auto_scaling_enabled         = true # Enable Cluster Autoscaler
-    min_count                    = 1
-    max_count                    = 3
+    min_count                    = 3
+    max_count                    = 5
     temporary_name_for_rotation  = "tempsystem" # Temporary node pool name used to cycle the default node pool for VM resizing
     only_critical_addons_enabled = false
 
@@ -181,12 +181,13 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 }
 
 
+/*
 # User node pool
 resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
   name                  = "user"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks_cluster.id
   vm_size               = var.aks_vm_size
-  vnet_subnet_id        = var.private_subnet_id[1]
+  vnet_subnet_id        = var.private_subnet_id[2]
   zones                 = [1, 2, 3]
   node_count            = 1
   auto_scaling_enabled  = true
@@ -198,6 +199,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
     "worker-name" = "user"
   }
 }
+*/
 
 
 /*

@@ -49,8 +49,8 @@ resource "azurerm_application_gateway" "aks_agw" {
   resource_group_name = var.rg_name
 
   sku {
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
+    name     = "Standard_v2" # WAF_v2
+    tier     = "Standard_v2" # WAF_v2
     capacity = 2
   }
 
@@ -60,7 +60,8 @@ resource "azurerm_application_gateway" "aks_agw" {
   }
 
   gateway_ip_configuration {
-    name      = "appGatewayIpConfig"
+    name = "appGatewayIpConfig"
+    # subnet_id = var.private_subnet_id[0]
     subnet_id = var.public_subnet_id[2]
   }
 
@@ -69,15 +70,22 @@ resource "azurerm_application_gateway" "aks_agw" {
     port = 80
   }
 
-  frontend_port {
-    name = "https_port"
-    port = 443
-  }
+  # frontend_port {
+  #   name = "https_port"
+  #   port = 443
+  # }
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
     public_ip_address_id = azurerm_public_ip.agw_public_ip.id
   }
+
+  # frontend_ip_configuration {
+  #   name                          = "${local.frontend_ip_configuration_name}-private"
+  #   subnet_id                     = var.public_subnet_id[2] # var.private_subnet_id[0]
+  #   private_ip_address_allocation = "Static"
+  #   private_ip_address            = "10.30.5.10"
+  # }
 
   backend_address_pool {
     name = local.backend_address_pool_name
@@ -99,6 +107,13 @@ resource "azurerm_application_gateway" "aks_agw" {
     protocol                       = "Http"
   }
 
+  # http_listener {
+  #   name                           = local.listener_name
+  #   frontend_ip_configuration_name = "${local.frontend_ip_configuration_name}-private"
+  #   frontend_port_name             = local.frontend_port_name
+  #   protocol                       = "Http"
+  # }
+
   request_routing_rule {
     name                       = local.request_routing_rule_name
     rule_type                  = "Basic" # "PathBasedRouting"
@@ -106,6 +121,17 @@ resource "azurerm_application_gateway" "aks_agw" {
     backend_address_pool_name  = local.backend_address_pool_name
     backend_http_settings_name = local.http_setting_name
     priority                   = 10
+  }
+
+  lifecycle {
+    ignore_changes = [
+      backend_address_pool,
+      backend_http_settings,
+      http_listener,
+      probe,
+      request_routing_rule,
+      tags,
+    ]
   }
 }
 
@@ -158,7 +184,7 @@ resource "azurerm_private_endpoint" "kv_private_endpoint" {
   name                = "${local.kv_name}PrivateEndpoint"
   location            = var.rg_location
   resource_group_name = var.rg_name
-  subnet_id           = var.private_subnet_id[0]
+  subnet_id           = var.private_subnet_id[1]
 
   private_service_connection {
     name                           = "aksAcrDemoConnection"
@@ -213,7 +239,7 @@ resource "azurerm_private_endpoint" "acr_private_endpoint" {
   name                = "aksAcrDemoPrivateEndpoint"
   location            = var.rg_location
   resource_group_name = var.rg_name
-  subnet_id           = var.private_subnet_id[0]
+  subnet_id           = var.private_subnet_id[1]
 
   private_service_connection {
     name                           = "aksAcrDemoConnection"

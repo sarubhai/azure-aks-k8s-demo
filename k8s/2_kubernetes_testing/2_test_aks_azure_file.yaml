@@ -1,0 +1,141 @@
+# Name: test_aks_azure_file.yaml
+# Owner: Saurav Mitra
+# Description: This yaml config will Test Azure File Resource in AKS Cluster 
+
+# Azure File Static Provisioning
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: test-azurefile-pv-static
+  annotations:
+    pv.kubernetes.io/provisioned-by: file.csi.azure.com
+spec:
+  storageClassName: azurefile-csi
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  csi:
+    driver: file.csi.azure.com
+    volumeHandle: ${AZURE_STORAGE_ACCOUNT}_${FILE_SHARE_NAME}
+    volumeAttributes:
+      shareName: ${FILE_SHARE_NAME}
+    nodeStageSecretRef:
+      name: ${SECRET_NAME}
+      namespace: ${TESTING_NAMESPACE}
+  mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
+    - uid=0
+    - gid=0
+    - mfsymlinks
+    - cache=strict # https://linux.die.net/man/8/mount.cifs
+    - nosharesock # reduce probability of reconnect race
+    - actimeo=30  # reduce latency for metadata-heavy workload
+    - nobrl  # disable sending byte range lock requests to the server and for applications which have challenges with posix locks
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-azurefile-pvc-static
+spec:
+  storageClassName: azurefile-csi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: test-azurefile-pv-static
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-azurefile-pod-static
+spec:
+  containers:
+    - image: centos
+      name: test-azurefile-static
+      command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /data/out.txt; sleep 5; done
+      volumeMounts:
+        - name: test-azurefile-persistent-storage
+          mountPath: "/data"
+  volumes:
+    - name: test-azurefile-persistent-storage
+      persistentVolumeClaim:
+        claimName: test-azurefile-pvc-static
+      # Mount file share as an inline volume
+      # csi:
+      #   driver: file.csi.azure.com
+      #   volumeAttributes:
+      #     secretName: ${SECRET_NAME}
+      #     shareName: ${FILE_SHARE_NAME}
+      #     # mountOptions: 'dir_mode=0777,file_mode=0777,cache=strict,actimeo=30,nosharesock,nobrl'
+
+---
+
+
+# Azure File Dynamic Provisioning
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: test-azurefile-sc
+provisioner: file.csi.azure.com
+reclaimPolicy: Delete # "Retain"
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+parameters:
+  skuname: Standard_LRS # Premium_LRS
+  # protocol: nfs
+mountOptions: ['dir_mode=0640,file_mode=0640,uid=0,gid=0,mfsymlinks,cache=strict,nosharesock,actimeo=30,nobrl']
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-azurefile-pvc
+spec:
+  storageClassName: test-azurefile-sc
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-azurefile-pod
+spec:
+  containers:
+    - image: centos
+      name: test-azurefile
+      command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /data/out.txt; sleep 5; done
+      volumeMounts:
+        - name: test-azurefile-persistent-storage
+          mountPath: "/data"
+  volumes:
+    - name: test-azurefile-persistent-storage
+      persistentVolumeClaim:
+        claimName: test-azurefile-pvc
+
+---
+
+
+# Azure File Dynamic Provisioning Retain File
+# Backup File Snapshot
+# Restore File Snapshot
+# Resize Filesystem

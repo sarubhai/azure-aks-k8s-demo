@@ -40,6 +40,10 @@ output "openvpn_access_server" {
   description = "OpenVPN Access Server URL."
 }
 
+output "openvpn_access_server_admin" {
+  value       = module.vnet_vpn.openvpn_access_server_admin
+  description = "OpenVPN Access Server Admin URL."
+}
 
 # AKS
 output "cluster_name" {

@@ -26,6 +26,11 @@ output "private_subnet_id" {
 
 # OpenVPN Access Server
 output "openvpn_access_server" {
-  value       = "https://${azurerm_public_ip.vpn_public_ip.ip_address}:943/admin"
+  value       = "https://${azurerm_public_ip.vpn_public_ip.ip_address}"
   description = "OpenVPN Access Server URL."
+}
+
+output "openvpn_access_server_admin" {
+  value       = "https://${azurerm_public_ip.vpn_public_ip.ip_address}:943/admin"
+  description = "OpenVPN Access Server Admin URL."
 }

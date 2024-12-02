@@ -1,0 +1,69 @@
+# Name: test_aks_hpa.yaml
+# Owner: Saurav Mitra
+# Description: This yaml config will Test Horizontal Pod Autoscaler in AKS Cluster
+
+# Deployment Manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-hpa-deploy
+spec:
+  selector:
+    matchLabels:
+      app: test-hpa
+  template:
+    metadata:
+      labels:
+        app: test-hpa
+    spec:
+      containers:
+        - name: test-hpa
+          image: registry.k8s.io/hpa-example
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 200m
+            limits:
+              cpu: 500m
+
+---
+
+# Service Manifest
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-hpa-svc
+  labels:
+    name: test-hpa-svc
+spec:
+  selector:
+    app: test-hpa
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+      protocol: TCP
+
+---
+
+# HorizontalPodAutoscaler Manifest
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: test-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-hpa-deploy
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+  minReplicas: 1
+  maxReplicas: 5

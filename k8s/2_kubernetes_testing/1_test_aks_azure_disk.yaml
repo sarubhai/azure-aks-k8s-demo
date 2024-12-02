@@ -1,0 +1,129 @@
+# Name: test_aks_azure_disk.yaml
+# Owner: Saurav Mitra
+# Description: This yaml config will Test Azure Disk Resource in AKS Cluster 
+
+# Azure Disk Static Provisioning
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: test-azuredisk-pv-static
+  annotations:
+    pv.kubernetes.io/provisioned-by: disk.csi.azure.com
+spec:
+  storageClassName: managed-csi
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  csi:
+    driver: disk.csi.azure.com
+    volumeHandle: /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP_NAME}/providers/Microsoft.Compute/disks/${AZURE_DISK_NAME}
+    volumeAttributes:
+      fsType: ext4
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-azuredisk-pvc-static
+spec:
+  storageClassName: managed-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: test-azuredisk-pv-static
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-azuredisk-pod-static
+spec:
+  containers:
+    - image: centos
+      name: test-azuredisk-static
+      command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /data/out.txt; sleep 5; done
+      volumeMounts:
+        - name: test-azuredisk-persistent-storage
+          mountPath: "/data"
+  volumes:
+    - name: test-azuredisk-persistent-storage
+      persistentVolumeClaim:
+        claimName: test-azuredisk-pvc-static
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: topology.disk.csi.azure.com/zone
+              operator: In
+              values:
+                - ${RESOURCE_GROUP_LOCATION}-${ZONE}
+
+---
+
+
+# Azure Disk Dynamic Provisioning
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: test-azuredisk-sc
+provisioner: disk.csi.azure.com
+reclaimPolicy: Delete # "Retain"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  skuname: Standard_LRS # Premium_LRS
+  # enableBursting: "true"
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-azuredisk-pvc
+spec:
+  storageClassName: test-azuredisk-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-azuredisk-pod
+spec:
+  containers:
+    - image: centos
+      name: test-azuredisk
+      command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /data/out.txt; sleep 5; done
+      volumeMounts:
+        - name: test-azuredisk-persistent-storage
+          mountPath: "/data"
+  volumes:
+    - name: test-azuredisk-persistent-storage
+      persistentVolumeClaim:
+        claimName: test-azuredisk-pvc
+
+---
+
+
+# Azure Disk Dynamic Provisioning Retain Disk
+# Backup Volume Snapshot
+# Restore Volume Snapshot
+# Resize Volume
